@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CM Tracker — Social Media Performance</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -133,9 +134,8 @@ td.strong{color:var(--ink);font-weight:500;}
 .trend-angle-label{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;margin-top:1px;}
 .trend-angle{font-size:12px;color:var(--ink);line-height:1.5;font-style:italic;flex:1;}
 .sl-updated{font-size:11px;color:var(--ink-faint);text-align:center;padding:12px;font-style:italic;}
-.upload-zone{border:1.5px dashed var(--border-dark);background:var(--white);border-radius:var(--radius);padding:28px 24px;text-align:center;cursor:pointer;transition:all 0.15s;position:relative;}
+.upload-zone{border:1.5px dashed var(--border-dark);background:var(--white);border-radius:var(--radius);padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.15s;}
 .upload-zone:hover{border-color:var(--ink);}
-.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .analysis-box{background:var(--bg-warm);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-top:10px;display:none;}
 .analysis-box.visible{display:block;}
 .analysis-title{font-size:10px;font-weight:600;color:var(--ink);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:6px;}
@@ -175,12 +175,13 @@ textarea{resize:vertical;min-height:52px;}
 .no-client{background:#FFF8E6;border:1px solid #FFD970;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#7A5A00;margin-bottom:14px;display:none;}
 .api-warning{background:#FDF0F0;border:1px solid #E8C4C4;border-radius:var(--radius);padding:12px 16px;font-size:12px;color:#8B1E1E;margin-bottom:16px;}
 .api-warning a{color:#8B1E1E;font-weight:600;}
+.sync-badge{font-size:10px;background:var(--green-light);color:var(--green);padding:2px 8px;border-radius:3px;font-weight:600;margin-left:8px;}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo">CM Tracker <span>Social Media Performance</span></div>
+  <div class="logo">CM Tracker <span>Social Media Performance</span><span class="sync-badge">● En tiempo real</span></div>
   <div class="header-right">
     <select class="client-select" id="client-select" onchange="switchClient()"><option value="">— Cliente —</option></select>
     <button class="btn-sm" onclick="openAddClient()">+ Cliente</button>
@@ -196,7 +197,6 @@ textarea{resize:vertical;min-height:52px;}
   <button class="nav-tab" onclick="switchTab('top',event)">Top contenido</button>
 </nav>
 
-<!-- ANALYTICS -->
 <div class="view active" id="tab-analytics">
   <p class="page-title" id="a-client-name">Analytics</p>
   <p class="page-sub">Seleccioná el período para ver métricas y comparativas.</p>
@@ -233,11 +233,8 @@ textarea{resize:vertical;min-height:52px;}
   <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Área</th><th>Alcance</th><th>Guardados</th><th>DMs</th><th>Leads</th></tr></thead><tbody id="analytics-tbody"><tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr></tbody></table></div></div>
 </div>
 
-<!-- INSIGHTS IA -->
 <div class="view" id="tab-insights">
-  <div class="api-warning" id="api-key-warning" style="display:none;">
-    ⚠️ Para usar Insights IA y Tendencias necesitás configurar tu API key de Anthropic. <a href="#" onclick="showApiSetup()">Configurar ahora</a>
-  </div>
+  <div class="api-warning" id="api-key-warning" style="display:none;">⚠️ Configurá tu API key de Anthropic. <a href="#" onclick="showApiSetup()">Configurar ahora</a></div>
   <div class="ai-header">
     <div><p class="page-title">Insights IA</p><p class="page-sub">Análisis inteligente basado en tus datos reales.</p></div>
     <button class="btn-analyze" id="btn-analyze" onclick="runAnalysis()"><div class="spinner"></div><span class="btn-text">✦ Analizar ahora</span></button>
@@ -245,16 +242,15 @@ textarea{resize:vertical;min-height:52px;}
   <div id="ai-empty-state" class="ai-empty">
     <div class="ai-empty-icon">✦</div>
     <div class="ai-empty-title">Análisis inteligente de tu contenido</div>
-    <div class="ai-empty-sub">Claude analiza tus publicaciones, detecta patrones y te da recomendaciones concretas.</div>
+    <div class="ai-empty-sub">Claude analiza tus publicaciones y te da recomendaciones concretas.</div>
     <button class="btn-analyze" onclick="runAnalysis()" style="margin:0 auto;"><div class="spinner"></div><span class="btn-text">✦ Analizar ahora</span></button>
   </div>
   <div id="ai-results" class="ai-results" style="display:none;"></div>
 </div>
 
-<!-- TENDENCIAS -->
 <div class="view" id="tab-listening">
   <div class="sl-header">
-    <div><p class="page-title">◎ Tendencias</p><p class="page-sub">Temas en auge esta semana — con ángulo de contenido para tu cliente.</p></div>
+    <div><p class="page-title">◎ Tendencias</p><p class="page-sub">Temas en auge esta semana con ángulo de contenido.</p></div>
     <button class="btn-analyze" id="btn-listening" onclick="runListening()"><div class="spinner"></div><span class="btn-text">Buscar tendencias</span></button>
   </div>
   <div class="sl-niche-filter">
@@ -268,36 +264,35 @@ textarea{resize:vertical;min-height:52px;}
   <div id="sl-empty" class="ai-empty">
     <div class="ai-empty-icon">◎</div>
     <div class="ai-empty-title">Social Listening en tiempo real</div>
-    <div class="ai-empty-sub">Claude busca los temas más mencionados esta semana y te dice cómo usarlos como contenido.</div>
+    <div class="ai-empty-sub">Claude busca los temas más mencionados esta semana.</div>
     <button class="btn-analyze" onclick="runListening()" style="margin:20px auto 0;"><div class="spinner"></div><span class="btn-text">Buscar tendencias ahora</span></button>
   </div>
   <div id="sl-results" class="sl-grid" style="display:none;"></div>
   <div id="sl-updated" class="sl-updated" style="display:none;"></div>
 </div>
 
-<!-- CARGAR -->
 <div class="view" id="tab-cargar">
   <p class="page-title">Cargar publicación</p>
-  <p class="page-sub">Subí una captura de Instagram Insights — Claude extrae las métricas automáticamente.</p>
+  <p class="page-sub">Subí hasta 3 capturas de Instagram Insights — Claude combina las métricas automáticamente.</p>
   <div class="no-client" id="no-client-warn">Seleccioná un cliente antes de cargar.</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0;">
-    <div class="upload-zone" id="uz-1" onclick="document.getElementById('fi-1').click()">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+    <div class="upload-zone" onclick="document.getElementById('fi-1').click()">
       <input type="file" id="fi-1" accept="image/*" style="display:none" onchange="previewFile(1,event)">
-      <div id="uz-1-preview" style="display:none;position:relative;"><img id="uz-1-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(1)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
-      <div id="uz-1-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 1</div><div style="font-size:10px;color:var(--ink-faint);">Overview</div></div>
+      <div id="uz-1-preview" style="display:none;position:relative;"><img id="uz-1-img" style="width:100%;height:80px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(1)" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;">✕</button></div>
+      <div id="uz-1-empty"><div style="font-size:16px;margin-bottom:4px;">📊</div><div style="font-size:11px;font-weight:500;">Captura 1</div><div style="font-size:10px;color:var(--ink-faint);">Overview</div></div>
     </div>
-    <div class="upload-zone" id="uz-2" onclick="document.getElementById('fi-2').click()">
+    <div class="upload-zone" onclick="document.getElementById('fi-2').click()">
       <input type="file" id="fi-2" accept="image/*" style="display:none" onchange="previewFile(2,event)">
-      <div id="uz-2-preview" style="display:none;position:relative;"><img id="uz-2-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(2)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
-      <div id="uz-2-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 2</div><div style="font-size:10px;color:var(--ink-faint);">Engagement</div></div>
+      <div id="uz-2-preview" style="display:none;position:relative;"><img id="uz-2-img" style="width:100%;height:80px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(2)" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;">✕</button></div>
+      <div id="uz-2-empty"><div style="font-size:16px;margin-bottom:4px;">📊</div><div style="font-size:11px;font-weight:500;">Captura 2</div><div style="font-size:10px;color:var(--ink-faint);">Engagement</div></div>
     </div>
-    <div class="upload-zone" id="uz-3" onclick="document.getElementById('fi-3').click()">
+    <div class="upload-zone" onclick="document.getElementById('fi-3').click()">
       <input type="file" id="fi-3" accept="image/*" style="display:none" onchange="previewFile(3,event)">
-      <div id="uz-3-preview" style="display:none;position:relative;"><img id="uz-3-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(3)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
-      <div id="uz-3-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 3</div><div style="font-size:10px;color:var(--ink-faint);">Audience</div></div>
+      <div id="uz-3-preview" style="display:none;position:relative;"><img id="uz-3-img" style="width:100%;height:80px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(3)" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;">✕</button></div>
+      <div id="uz-3-empty"><div style="font-size:16px;margin-bottom:4px;">📊</div><div style="font-size:11px;font-weight:500;">Captura 3</div><div style="font-size:10px;color:var(--ink-faint);">Audience</div></div>
     </div>
   </div>
-  <div style="margin-top:8px;margin-bottom:0;">
+  <div style="margin-top:8px;">
     <button class="btn btn-outline" onclick="analyzeAllFiles()" id="btn-analyze-files" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;">
       <div class="spinner" id="analyze-spinner" style="border-color:rgba(0,0,0,0.2);border-top-color:var(--ink);display:none;"></div>
       <span>Extraer métricas de las capturas</span>
@@ -329,7 +324,6 @@ textarea{resize:vertical;min-height:52px;}
   <div class="btn-row"><button class="btn btn-primary" onclick="savePost()">Guardar</button><button class="btn btn-outline" onclick="clearForm()">Limpiar</button></div>
 </div>
 
-<!-- FUNNEL -->
 <div class="view" id="tab-funnel">
   <p class="page-title">Funnel de conversión</p>
   <p class="page-sub">Contenido → Alcance → Lead → Reserva → Paciente → €</p>
@@ -341,24 +335,21 @@ textarea{resize:vertical;min-height:52px;}
   <div class="funnel-wrap" id="funnel-steps"></div>
 </div>
 
-<!-- TOP -->
 <div class="view" id="tab-top">
   <p class="page-title">Top contenido</p>
   <p class="page-sub">Rankeado por score de conversión.</p>
   <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Área</th><th>Alcance</th><th>Guardados</th><th>Leads</th><th>Score</th></tr></thead><tbody id="top-tbody"><tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr></tbody></table></div></div>
 </div>
 
-<!-- API Key Modal -->
 <div class="modal-overlay" id="modal-apikey">
   <div class="modal">
     <div class="modal-title">Configurar API Key de Anthropic</div>
-    <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Necesitás una API key de <a href="https://console.anthropic.com" target="_blank" style="color:var(--ink);">console.anthropic.com</a> para usar Insights IA y Tendencias.</p>
+    <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Necesitás una API key de <a href="https://console.anthropic.com" target="_blank" style="color:var(--ink);">console.anthropic.com</a></p>
     <div class="form-group"><label>API Key</label><input type="password" id="api-key-input" placeholder="sk-ant-..."></div>
     <div class="modal-actions"><button class="btn btn-outline" onclick="document.getElementById('modal-apikey').classList.remove('open')">Cancelar</button><button class="btn btn-primary" onclick="saveApiKey()">Guardar</button></div>
   </div>
 </div>
 
-<!-- Modal cliente -->
 <div class="modal-overlay" id="modal-client">
   <div class="modal">
     <div class="modal-title">Agregar cliente</div>
@@ -371,70 +362,76 @@ textarea{resize:vertical;min-height:52px;}
 <div class="toast" id="toast"></div>
 
 <script>
-const CLIENTS_KEY='cm_clients';
-const POSTS_PREFIX='cm_posts_';
-const API_KEY_STORAGE='cm_api_key';
-let currentClient=null,currentPeriodDays=7,customFrom=null,customTo=null;
-let chartAlcance=null,chartTipo=null;
-let currentNiche='longevidad';
-let API_KEY='';
+const SUPABASE_URL = 'https://opycukwsslyuspslifrf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_OUI2jlnxPlNefbwqybYpIQ_tjLSNwZP';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Storage usando localStorage (funciona en web publicada)
-function store(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
-function retrieve(key){try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch{return null;}}
+const API_KEY_STORAGE = 'cm_api_key';
+let currentClient = null, currentPeriodDays = 7, customFrom = null, customTo = null;
+let chartAlcance = null, chartTipo = null;
+let currentNiche = 'longevidad';
+let API_KEY = '';
+let allPosts = [];
 
-function getClients(){return retrieve(CLIENTS_KEY)||[];}
-function saveClients(c){store(CLIENTS_KEY,c);}
-function getPosts(cid){return retrieve(POSTS_PREFIX+cid)||[];}
-function savePosts(cid,p){store(POSTS_PREFIX+cid,p);}
-function getApiKey(){return retrieve(API_KEY_STORAGE)||'';}
-function storeApiKey(k){store(API_KEY_STORAGE,k);}
+function storeLocal(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+function getLocal(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch{return null;}}
+function getApiKey(){return getLocal(API_KEY_STORAGE)||'';}
+function storeApiKey(k){storeLocal(API_KEY_STORAGE,k);}
 
-(()=>{
-  API_KEY=getApiKey();
-  renderClientSelect();
-  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
-  const today=new Date(),from=new Date(today);from.setDate(from.getDate()-7);
-  document.getElementById('date-to').value=today.toISOString().split('T')[0];
-  document.getElementById('date-from').value=from.toISOString().split('T')[0];
+(async()=>{
+  API_KEY = getApiKey();
+  await loadClients();
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  const today = new Date(), from = new Date(today);
+  from.setDate(from.getDate()-7);
+  document.getElementById('date-to').value = today.toISOString().split('T')[0];
+  document.getElementById('date-from').value = from.toISOString().split('T')[0];
 })();
+
+async function loadClients(){
+  const {data} = await sb.from('clients').select('*').order('name');
+  const sel = document.getElementById('client-select');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Cliente —</option>' + (data||[]).map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(prev && (data||[]).find(c=>c.id===prev)) sel.value = prev;
+}
+
+async function loadPosts(clientId){
+  const {data} = await sb.from('posts').select('*').eq('client_id', clientId).order('fecha', {ascending:false});
+  allPosts = data || [];
+  return allPosts;
+}
 
 function showApiSetup(){document.getElementById('modal-apikey').classList.add('open');}
 function saveApiKey(){
-  const key=document.getElementById('api-key-input').value.trim();
+  const key = document.getElementById('api-key-input').value.trim();
   if(!key){showToast('Ingresá tu API key.');return;}
-  API_KEY=key;storeApiKey(key);
+  API_KEY = key; storeApiKey(key);
   document.getElementById('modal-apikey').classList.remove('open');
-  document.getElementById('api-key-warning').style.display='none';
+  document.getElementById('api-key-warning').style.display = 'none';
   showToast('API key guardada.');
 }
 
-async function callClaude(messages,tools){
+async function callClaude(messages, tools){
   if(!API_KEY){document.getElementById('api-key-warning').style.display='block';showApiSetup();return null;}
-  const body={model:'claude-sonnet-4-6',max_tokens:1500,messages};
-  if(tools)body.tools=tools;
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  const body = {model:'claude-sonnet-4-6', max_tokens:1500, messages};
+  if(tools) body.tools = tools;
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
   return resp.json();
 }
 
-function renderClientSelect(){
-  const clients=getClients(),sel=document.getElementById('client-select'),prev=sel.value;
-  sel.innerHTML='<option value="">— Cliente —</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-  if(prev&&clients.find(c=>c.id===prev))sel.value=prev;
-}
-
 function switchClient(){
-  currentClient=document.getElementById('client-select').value||null;
-  document.getElementById('no-client-warn').style.display=currentClient?'none':'block';
-  refreshAnalytics();updateFunnel();refreshTop();
-  document.getElementById('ai-results').style.display='none';
-  document.getElementById('ai-empty-state').style.display='block';
+  currentClient = document.getElementById('client-select').value || null;
+  document.getElementById('no-client-warn').style.display = currentClient ? 'none' : 'block';
+  refreshAnalytics(); updateFunnel(); refreshTop();
+  document.getElementById('ai-results').style.display = 'none';
+  document.getElementById('ai-empty-state').style.display = 'block';
 }
 
 function setPeriod(days,btn){
   currentPeriodDays=days;customFrom=null;customTo=null;
   document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');refreshAnalytics();
+  btn.classList.add('active'); refreshAnalytics();
 }
 
 function setCustomPeriod(){
@@ -468,11 +465,12 @@ function renderDelta(elId,curr,prev){
   el.className='stat-delta '+(pct>0?'delta-up':pct<0?'delta-down':'delta-neutral');
 }
 
-function refreshAnalytics(){
-  if(!currentClient)return;
-  const clients=getClients(),client=clients.find(c=>c.id===currentClient);
-  if(client)document.getElementById('a-client-name').textContent=client.name;
-  const allPosts=getPosts(currentClient),range=getDateRange(),prevRange=getPrevRange(range);
+async function refreshAnalytics(){
+  if(!currentClient) return;
+  const {data:clients} = await sb.from('clients').select('*').eq('id',currentClient);
+  if(clients&&clients[0]) document.getElementById('a-client-name').textContent = clients[0].name;
+  await loadPosts(currentClient);
+  const range=getDateRange(),prevRange=getPrevRange(range);
   const posts=filterPosts(allPosts,range),prevPosts=filterPosts(allPosts,prevRange);
   const cc=sum(posts,'clicks_wa')+sum(posts,'clicks_web'),pc=sum(prevPosts,'clicks_wa')+sum(prevPosts,'clicks_web');
   [[posts.length,prevPosts.length,'d-posts','d-delta-posts','d-prev-posts'],
@@ -514,19 +512,18 @@ function renderAreaBars(posts){
 function renderTable(posts){
   const tbody=document.getElementById('analytics-tbody');
   if(!posts.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr>';return;}
-  tbody.innerHTML=[...posts].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(p=>`<tr><td>${p.fecha}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td class="strong" style="max-width:160px;white-space:normal;">${p.desc||'—'}</td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td>${p.dms}</td><td><b>${p.leads}</b></td></tr>`).join('');
+  tbody.innerHTML=[...posts].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(p=>`<tr><td>${p.fecha}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td class="strong" style="max-width:160px;white-space:normal;">${p.descripcion||'—'}</td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td>${p.dms}</td><td><b>${p.leads}</b></td></tr>`).join('');
 }
 
 async function runAnalysis(){
   if(!currentClient){showToast('Seleccioná un cliente primero.');return;}
   const btn=document.getElementById('btn-analyze');
   btn.classList.add('loading');btn.disabled=true;
-  const allPosts=getPosts(currentClient),range=getDateRange(),prevRange=getPrevRange(range);
+  const range=getDateRange(),prevRange=getPrevRange(range);
   const posts=filterPosts(allPosts,range),prevPosts=filterPosts(allPosts,prevRange);
-  const clients=getClients(),client=clients.find(c=>c.id===currentClient);
   if(!posts.length){showToast('Sin publicaciones en este período.');btn.classList.remove('loading');btn.disabled=false;return;}
   const topPost=[...posts].sort((a,b)=>((b.leads*10)+(b.guardados*3))-((a.leads*10)+(a.guardados*3)))[0];
-  const dataStr=`Cliente: ${client?.name||'—'}\nPublicaciones: ${posts.length}\nAlcance: ${sum(posts,'alcance')} | Likes: ${sum(posts,'likes')} | Guardados: ${sum(posts,'guardados')} | DMs: ${sum(posts,'dms')} | Leads: ${sum(posts,'leads')}\nAnterior — Alcance: ${sum(prevPosts,'alcance')} | Leads: ${sum(prevPosts,'leads')}\nPosts:\n${posts.map(p=>`- ${p.fecha}|${p.tipo}|${p.area}|${p.objetivo}|alcance:${p.alcance}|leads:${p.leads}|guardados:${p.guardados}|"${p.desc||''}"`).join('\n')}\nMejor: ${topPost?`${topPost.tipo} ${topPost.fecha} "${topPost.desc}" leads:${topPost.leads}`:'N/A'}`;
+  const dataStr=`Publicaciones: ${posts.length}\nAlcance: ${sum(posts,'alcance')} | Likes: ${sum(posts,'likes')} | Guardados: ${sum(posts,'guardados')} | DMs: ${sum(posts,'dms')} | Leads: ${sum(posts,'leads')}\nAnterior — Alcance: ${sum(prevPosts,'alcance')} | Leads: ${sum(prevPosts,'leads')}\nPosts:\n${posts.map(p=>`- ${p.fecha}|${p.tipo}|${p.area}|${p.objetivo}|alcance:${p.alcance}|leads:${p.leads}|guardados:${p.guardados}|"${p.descripcion||''}"`).join('\n')}\nMejor: ${topPost?`${topPost.tipo} ${topPost.fecha} "${topPost.descripcion}" leads:${topPost.leads}`:'N/A'}`;
   try{
     const data=await callClaude([{role:'user',content:`Eres estratega de social media para clínicas médicas de lujo. Analizá estos datos y respondé SOLO con JSON válido sin markdown:\n{"resumen":"","funcionando":["","",""],"mejorar":["","",""],"recomendaciones":["","",""],"alerta":null,"proxima_accion":""}\nDATOS:\n${dataStr}`}]);
     if(!data){btn.classList.remove('loading');btn.disabled=false;return;}
@@ -550,7 +547,7 @@ function renderAIResults(d){
     </div>
     <div class="ai-section"><div class="ai-section-header"><span>→</span><div class="ai-section-title">Recomendaciones concretas</div></div><div class="ai-section-body">${(d.recomendaciones||[]).map(i=>`<div class="ai-item"><div class="ai-item-dot dot-blue"></div><div class="ai-item-text">${i}</div></div>`).join('')}</div></div>
     <div class="ai-section" style="border-color:#C4D4E8;"><div class="ai-section-header" style="background:#EEF3F8;"><span>⚡</span><div class="ai-section-title" style="color:var(--blue);">Próxima acción prioritaria</div></div><div class="ai-section-body"><div class="ai-item"><div class="ai-item-dot dot-blue"></div><div class="ai-item-text"><strong>${d.proxima_accion||'—'}</strong></div></div></div></div>
-    <div class="ai-footer">Análisis generado con datos reales. Actualizá cada vez que cargues nuevas publicaciones.</div>`;
+    <div class="ai-footer">Análisis generado con datos reales.</div>`;
 }
 
 async function runListening(){
@@ -560,37 +557,22 @@ async function runListening(){
   document.getElementById('sl-results').style.display='none';
   document.getElementById('sl-updated').style.display='none';
   try{
-    const data=await callClaude([{role:'user',content:`Eres estratega de contenido para clínicas de medicina funcional y longevidad de lujo.\n\nBuscá los 6 temas más mencionados esta semana en el nicho de "${currentNiche}" en redes sociales, blogs, medios y podcasts en España y a nivel internacional.\n\nRespondé SOLO con JSON válido sin markdown:\n{"tendencias":[{"tema":"","descripcion":"","urgencia":"alta|media|evergreen","formato":"Reel|Carrusel|Story|Reel + Carrusel","angulo_amuna":"","ejemplo_titulo":""}]}`}],[{type:'web_search_20250305',name:'web_search'}]);
+    const data=await callClaude([{role:'user',content:`Eres estratega de contenido para clínicas de medicina funcional y longevidad de lujo.\n\nBuscá los 6 temas más mencionados esta semana en el nicho de "${currentNiche}". Respondé SOLO con JSON válido sin markdown:\n{"tendencias":[{"tema":"","descripcion":"","urgencia":"alta|media|evergreen","formato":"Reel|Carrusel|Story","angulo_amuna":"","ejemplo_titulo":""}]}`}],[{type:'web_search_20250305',name:'web_search'}]);
     if(!data){btn.classList.remove('loading');btn.disabled=false;document.getElementById('sl-empty').style.display='block';return;}
     const text=data.content?.filter(i=>i.type==='text').map(i=>i.text).join('')||'';
     let parsed;
     try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}
     catch{const m=text.match(/\{[\s\S]*\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
-    if(!parsed?.tendencias){showToast('Error al obtener tendencias.');btn.classList.remove('loading');btn.disabled=false;document.getElementById('sl-empty').style.display='block';return;}
-    const urgencyClass={'alta':'tag-urgency-alta','media':'tag-urgency-media','evergreen':'tag-urgency-evergreen'};
-    const urgencyLabel={'alta':'🔥 Esta semana','media':'↑ En crecimiento','evergreen':'Evergreen activo'};
-    document.getElementById('sl-results').innerHTML=parsed.tendencias.map((t,i)=>`
-      <div class="trend-card">
-        <div class="trend-top">
-          <div class="trend-num">${String(i+1).padStart(2,'0')}</div>
-          <div class="trend-main">
-            <div class="trend-topic">${t.tema}</div>
-            <div class="trend-desc">${t.descripcion}</div>
-            <div class="trend-tags"><span class="trend-tag ${urgencyClass[t.urgencia]||'tag-urgency-media'}">${urgencyLabel[t.urgencia]||t.urgencia}</span></div>
-          </div>
-          <div class="trend-right"><span class="trend-format">${t.formato}</span></div>
-        </div>
-        <div class="trend-bottom">
-          <span class="trend-angle-label">Ángulo</span>
-          <div class="trend-angle">${t.angulo_amuna}${t.ejemplo_titulo?`<div style="margin-top:6px;font-size:11px;font-weight:600;color:var(--ink);font-style:normal;">💡 "${t.ejemplo_titulo}"</div>`:''}</div>
-        </div>
-      </div>`).join('');
+    if(!parsed?.tendencias){showToast('Error.');btn.classList.remove('loading');btn.disabled=false;document.getElementById('sl-empty').style.display='block';return;}
+    const uc={'alta':'tag-urgency-alta','media':'tag-urgency-media','evergreen':'tag-urgency-evergreen'};
+    const ul={'alta':'🔥 Esta semana','media':'↑ En crecimiento','evergreen':'Evergreen activo'};
+    document.getElementById('sl-results').innerHTML=parsed.tendencias.map((t,i)=>`<div class="trend-card"><div class="trend-top"><div class="trend-num">${String(i+1).padStart(2,'0')}</div><div class="trend-main"><div class="trend-topic">${t.tema}</div><div class="trend-desc">${t.descripcion}</div><div class="trend-tags"><span class="trend-tag ${uc[t.urgencia]||'tag-urgency-media'}">${ul[t.urgencia]||t.urgencia}</span></div></div><div class="trend-right"><span class="trend-format">${t.formato}</span></div></div><div class="trend-bottom"><span class="trend-angle-label">Ángulo</span><div class="trend-angle">${t.angulo_amuna}${t.ejemplo_titulo?`<div style="margin-top:6px;font-size:11px;font-weight:600;color:var(--ink);font-style:normal;">💡 "${t.ejemplo_titulo}"</div>`:''}</div></div></div>`).join('');
     document.getElementById('sl-results').style.display='flex';
     const now=new Date();
     document.getElementById('sl-updated').textContent=`Actualizado: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} — ${currentNiche}`;
     document.getElementById('sl-updated').style.display='block';
     showToast('Tendencias actualizadas.');
-  }catch{showToast('Error de conexión.');document.getElementById('sl-empty').style.display='block';}
+  }catch{showToast('Error.');document.getElementById('sl-empty').style.display='block';}
   btn.classList.remove('loading');btn.disabled=false;
 }
 
@@ -601,11 +583,7 @@ function previewFile(n,event){
   uploadedFiles[n]=file;
   const img=document.getElementById(`uz-${n}-img`);
   const reader=new FileReader();
-  reader.onload=e=>{
-    img.src=e.target.result;
-    document.getElementById(`uz-${n}-empty`).style.display='none';
-    document.getElementById(`uz-${n}-preview`).style.display='block';
-  };
+  reader.onload=e=>{img.src=e.target.result;document.getElementById(`uz-${n}-empty`).style.display='none';document.getElementById(`uz-${n}-preview`).style.display='block';};
   reader.readAsDataURL(file);
 }
 
@@ -620,38 +598,60 @@ function clearFile(n){
 async function analyzeAllFiles(){
   const files=Object.values(uploadedFiles).filter(Boolean);
   if(!files.length){showToast('Subí al menos una captura primero.');return;}
-  const btn=document.getElementById('btn-analyze-files');
-  const spinner=document.getElementById('analyze-spinner');
+  const btn=document.getElementById('btn-analyze-files'),spinner=document.getElementById('analyze-spinner');
   btn.disabled=true;spinner.style.display='block';
   const box=document.getElementById('analysis-box'),content=document.getElementById('analysis-content');
-  box.classList.add('visible');content.innerHTML='<span class="loading-text">Analizando '+files.length+' captura'+(files.length>1?'s':'')+'...</span>';
-
+  box.classList.add('visible');content.innerHTML=`<span class="loading-text">Analizando ${files.length} captura${files.length>1?'s':''}...</span>`;
   const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
-
   try{
     const imageBlocks=await Promise.all(files.map(async f=>({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:await toB64(f)}})));
-    const msgContent=[...imageBlocks,{type:'text',text:`Analizá estas ${files.length} capturas de Instagram Insights de la misma publicación (pueden ser Overview, Engagement y/o Audience). Combiná toda la información visible en las imágenes. Respondé SOLO con JSON válido sin markdown:\n{"views":0,"alcance":0,"alcance_ns":0,"visitas_perfil":0,"nuevos_seguidores":0,"likes":0,"comentarios":0,"guardados":0,"compartidos":0,"clicks_wa":0,"clicks_web":0,"tipo":"","descripcion":""}\nSi un valor aparece en más de una imagen, usá el más completo. tipo: Reel/Carrusel/Post/Story.`}];
-
+    const msgContent=[...imageBlocks,{type:'text',text:`Analizá estas ${files.length} capturas de Instagram Insights de la misma publicación. Combiná toda la info. Respondé SOLO con JSON válido sin markdown:\n{"views":0,"alcance":0,"alcance_ns":0,"visitas_perfil":0,"nuevos_seguidores":0,"likes":0,"comentarios":0,"guardados":0,"compartidos":0,"clicks_wa":0,"clicks_web":0,"tipo":"","descripcion":""}`}];
     const data=await callClaude([{role:'user',content:msgContent}]);
     if(!data){content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">Configurá tu API key primero.</span>';btn.disabled=false;spinner.style.display='none';return;}
     const text=data.content?.map(i=>i.text||'').join('')||'';
-    let parsed;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">No pude extraer métricas. Completá manualmente.</span>';btn.disabled=false;spinner.style.display='none';return;}
+    let parsed;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">No pude extraer métricas.</span>';btn.disabled=false;spinner.style.display='none';return;}
     const map={views:'f-views',alcance:'f-alcance',alcance_ns:'f-alcance-ns',visitas_perfil:'f-visitas',nuevos_seguidores:'f-seguidores',likes:'f-likes',comentarios:'f-comentarios',guardados:'f-guardados',compartidos:'f-compartidos',clicks_wa:'f-clicks-wa',clicks_web:'f-clicks-web'};
     Object.entries(map).forEach(([k,id])=>{if(parsed[k])document.getElementById(id).value=parsed[k];});
     if(parsed.tipo)document.getElementById('f-tipo').value=parsed.tipo;
     if(parsed.descripcion)document.getElementById('f-desc').value=parsed.descripcion;
     content.innerHTML=Object.entries(parsed).filter(([k,v])=>v&&v!==''&&v!==0).map(([k,v])=>`<span style="display:inline-block;margin:2px 3px;background:white;border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;"><b>${k.replace(/_/g,' ')}</b>: ${v}</span>`).join('')||'<span class="loading-text">Sin métricas claras.</span>';
-    showToast('Métricas extraídas de '+files.length+' captura'+(files.length>1?'s':'')+'.');
-  }catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">Error. Completá manualmente.</span>';}
+    showToast(`Métricas extraídas de ${files.length} captura${files.length>1?'s':''}.`);
+  }catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">Error.</span>';}
   btn.disabled=false;spinner.style.display='none';
 }
 
-function savePost(){
+async function savePost(){
   if(!currentClient){showToast('Seleccioná un cliente primero.');return;}
   const fecha=document.getElementById('f-fecha').value;if(!fecha){showToast('Añadí la fecha.');return;}
-  const post={id:Date.now(),fecha,tipo:document.getElementById('f-tipo').value,objetivo:document.getElementById('f-objetivo').value,area:document.getElementById('f-area').value||'—',desc:document.getElementById('f-desc').value,servicio:document.getElementById('f-servicio').value,views:+document.getElementById('f-views').value||0,alcance:+document.getElementById('f-alcance').value||0,alcance_ns:+document.getElementById('f-alcance-ns').value||0,visitas:+document.getElementById('f-visitas').value||0,likes:+document.getElementById('f-likes').value||0,comentarios:+document.getElementById('f-comentarios').value||0,guardados:+document.getElementById('f-guardados').value||0,compartidos:+document.getElementById('f-compartidos').value||0,seguidores:+document.getElementById('f-seguidores').value||0,clicks_wa:+document.getElementById('f-clicks-wa').value||0,clicks_web:+document.getElementById('f-clicks-web').value||0,dms:+document.getElementById('f-dms').value||0,leads:+document.getElementById('f-leads').value||0,notas:document.getElementById('f-notas').value};
-  const posts=getPosts(currentClient);posts.unshift(post);
-  savePosts(currentClient,posts);showToast('Guardado.');clearForm();
+  const post={
+    id: Date.now(),
+    client_id: currentClient,
+    fecha,
+    tipo: document.getElementById('f-tipo').value,
+    objetivo: document.getElementById('f-objetivo').value,
+    area: document.getElementById('f-area').value||'—',
+    descripcion: document.getElementById('f-desc').value,
+    servicio: document.getElementById('f-servicio').value,
+    views: +document.getElementById('f-views').value||0,
+    alcance: +document.getElementById('f-alcance').value||0,
+    alcance_ns: +document.getElementById('f-alcance-ns').value||0,
+    visitas: +document.getElementById('f-visitas').value||0,
+    likes: +document.getElementById('f-likes').value||0,
+    comentarios: +document.getElementById('f-comentarios').value||0,
+    guardados: +document.getElementById('f-guardados').value||0,
+    compartidos: +document.getElementById('f-compartidos').value||0,
+    seguidores: +document.getElementById('f-seguidores').value||0,
+    clicks_wa: +document.getElementById('f-clicks-wa').value||0,
+    clicks_web: +document.getElementById('f-clicks-web').value||0,
+    dms: +document.getElementById('f-dms').value||0,
+    leads: +document.getElementById('f-leads').value||0,
+    notas: document.getElementById('f-notas').value
+  };
+  const {error} = await sb.from('posts').insert(post);
+  if(error){showToast('Error al guardar. Verificá la conexión.');return;}
+  showToast('Publicación guardada y sincronizada.');
+  clearForm();
+  refreshAnalytics();
 }
 
 function clearForm(){
@@ -661,33 +661,35 @@ function clearForm(){
   document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
 }
 
-function updateFunnel(){
+async function updateFunnel(){
   if(!currentClient)return;
-  const posts=getPosts(currentClient),range=getDateRange(),filtered=filterPosts(posts,range);
+  const range=getDateRange(),filtered=filterPosts(allPosts,range);
   const alcance=sum(filtered,'alcance'),clicks=sum(filtered,'clicks_wa')+sum(filtered,'clicks_web'),leads=sum(filtered,'leads');
   const reservas=+document.getElementById('funnel-reservas').value||0,pacientes=+document.getElementById('funnel-pacientes').value||0,facturacion=+document.getElementById('funnel-facturacion').value||0;
   const steps=[{num:'01',name:'Alcance',desc:'Total personas alcanzadas',val:alcance},{num:'02',name:'Clicks / DMs',desc:'Interacciones con intención',val:clicks,pct:alcance?(clicks/alcance*100).toFixed(1)+'%':null},{num:'03',name:'Leads',desc:'Contactos con intención real',val:leads,pct:clicks?(leads/clicks*100).toFixed(1)+'%':null},{num:'04',name:'Reservas',desc:'Citas reservadas',val:reservas,pct:leads?(reservas/leads*100).toFixed(1)+'%':null},{num:'05',name:'Pacientes',desc:'Consultas completadas',val:pacientes,pct:reservas?(pacientes/reservas*100).toFixed(1)+'%':null},{num:'06',name:'Facturación',desc:'€ generados desde Instagram',val:'€ '+facturacion.toLocaleString('es')}];
   document.getElementById('funnel-steps').innerHTML=steps.map((s,i)=>`${i>0?'<div class="funnel-arrow">↓</div>':''}<div class="funnel-step"><div class="funnel-num">${s.num}</div><div class="funnel-info"><div class="funnel-name">${s.name}</div><div class="funnel-desc">${s.desc}</div></div><div class="funnel-right"><div class="funnel-val">${typeof s.val==='number'?fmtNum(s.val):s.val}</div>${s.pct?`<div class="funnel-pct">conv. ${s.pct}</div>`:''}</div></div>`).join('');
 }
 
-function refreshTop(){
+async function refreshTop(){
   if(!currentClient)return;
-  const posts=getPosts(currentClient);
-  const scored=posts.map(p=>({...p,score:(p.leads*10)+(p.guardados*3)+(p.dms*5)+(p.compartidos*2)})).sort((a,b)=>b.score-a.score).slice(0,10);
+  const scored=allPosts.map(p=>({...p,score:(p.leads*10)+(p.guardados*3)+(p.dms*5)+(p.compartidos*2)})).sort((a,b)=>b.score-a.score).slice(0,10);
   const tbody=document.getElementById('top-tbody');
   if(!scored.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr>';return;}
-  tbody.innerHTML=scored.map(p=>`<tr><td>${p.fecha}</td><td class="strong" style="max-width:160px;white-space:normal;">${p.desc||'—'}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td><b>${p.leads}</b></td><td><b style="color:var(--green)">${p.score}</b></td></tr>`).join('');
+  tbody.innerHTML=scored.map(p=>`<tr><td>${p.fecha}</td><td class="strong" style="max-width:160px;white-space:normal;">${p.descripcion||'—'}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td><b>${p.leads}</b></td><td><b style="color:var(--green)">${p.score}</b></td></tr>`).join('');
 }
 
 function openAddClient(){document.getElementById('modal-client').classList.add('open');}
 function closeModal(){document.getElementById('modal-client').classList.remove('open');}
-function addClient(){
+
+async function addClient(){
   const name=document.getElementById('new-client-name').value.trim();
   if(!name){showToast('Escribí el nombre.');return;}
-  const clients=getClients(),id=Date.now().toString();
-  clients.push({id,name,network:document.getElementById('new-client-network').value});
-  saveClients(clients);renderClientSelect();
-  document.getElementById('client-select').value=id;currentClient=id;
+  const id=Date.now().toString();
+  const {error}=await sb.from('clients').insert({id,name,network:document.getElementById('new-client-network').value});
+  if(error){showToast('Error al crear cliente.');return;}
+  await loadClients();
+  document.getElementById('client-select').value=id;
+  currentClient=id;
   document.getElementById('no-client-warn').style.display='none';
   closeModal();showToast(`"${name}" agregado.`);
 }
