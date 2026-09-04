@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CM Tracker — Social Media Performance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0A0A0A;--ink:#1A1A1A;--ink-soft:#4A4A4A;--ink-faint:#909090;
+  --bg:#F4F4F2;--bg-warm:#EEEDE9;--bg-mid:#E5E4E0;--white:#FFFFFF;
+  --border:#DDDCDA;--border-dark:#C8C7C3;
+  --green:#1E5C3A;--green-light:#E6F2EC;
+  --blue:#1A3A5C;--blue-light:#E6EEF5;
+  --amber:#7A5A1A;--amber-light:#F5EDD6;
+  --red:#6B1E1E;--red-light:#F5E6E6;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --radius:6px;
+}
+body{font-family:var(--font-body);background:var(--bg);color:var(--ink);font-size:13px;line-height:1.5;min-height:100vh;}
+.header{background:var(--black);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:50px;}
+.logo{font-family:var(--font-display);font-size:14px;font-weight:700;color:white;letter-spacing:-0.01em;}
+.logo span{opacity:0.4;font-weight:400;margin-left:6px;font-size:11px;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.client-select{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius);color:white;font-size:11px;font-family:var(--font-body);padding:5px 10px;outline:none;cursor:pointer;}
+.client-select option{background:#1a1a1a;}
+.btn-sm{background:none;border:1px solid rgba(255,255,255,0.2);border-radius:var(--radius);color:rgba(255,255,255,0.6);font-size:11px;font-family:var(--font-body);padding:4px 10px;cursor:pointer;transition:all 0.15s;}
+.btn-sm:hover{background:rgba(255,255,255,0.08);color:white;}
+.nav{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;overflow-x:auto;}
+.nav-tab{padding:11px 14px;font-size:12px;font-weight:500;color:var(--ink-faint);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font-body);transition:color 0.15s;white-space:nowrap;}
+.nav-tab:hover{color:var(--ink);}
+.nav-tab.active{color:var(--ink);border-bottom-color:var(--ink);}
+.view{display:none;padding:24px;max-width:1100px;margin:0 auto;}
+.view.active{display:block;}
+.page-title{font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:-0.02em;margin-bottom:3px;}
+.page-sub{font-size:11px;color:var(--ink-faint);margin-bottom:20px;}
+.filter-bar{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-label{font-size:11px;font-weight:600;color:var(--ink-faint);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
+.period-btn{padding:5px 12px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ink-soft);font-family:var(--font-body);transition:all 0.15s;}
+.period-btn:hover{border-color:var(--ink);color:var(--ink);}
+.period-btn.active{background:var(--black);color:white;border-color:var(--black);}
+.date-input{padding:5px 10px;border:1px solid var(--border);border-radius:4px;font-size:11px;font-family:var(--font-body);color:var(--ink);background:var(--white);outline:none;}
+.filter-sep{width:1px;height:20px;background:var(--border);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.stat-label{font-size:10px;font-weight:600;color:var(--ink-faint);letter-spacing:0.05em;text-transform:uppercase;}
+.stat-delta{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;}
+.delta-up{background:var(--green-light);color:var(--green);}
+.delta-down{background:var(--red-light);color:var(--red);}
+.delta-neutral{background:var(--bg-mid);color:var(--ink-faint);}
+.stat-value{font-family:var(--font-display);font-size:26px;font-weight:700;color:var(--ink);line-height:1;letter-spacing:-0.02em;}
+.stat-prev{font-size:10px;color:var(--ink-faint);margin-top:3px;}
+.charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px;}
+.chart-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.chart-title{font-size:11px;font-weight:600;color:var(--ink);margin-bottom:14px;}
+.chart-wrap{position:relative;height:180px;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.compare-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.compare-title{font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:14px;}
+.compare-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.compare-metric{font-size:11px;color:var(--ink-soft);min-width:100px;}
+.compare-bars{flex:1;display:flex;flex-direction:column;gap:3px;}
+.compare-bar-wrap{display:flex;align-items:center;gap:6px;}
+.compare-bar{height:4px;border-radius:2px;transition:width 0.5s;}
+.bar-current{background:var(--black);}
+.bar-prev{background:var(--border-dark);}
+.compare-val{font-size:10px;font-weight:600;color:var(--ink);min-width:32px;text-align:right;}
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--black);color:white;font-size:10px;font-weight:600;padding:9px 12px;text-align:left;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);}
+tbody tr:hover{background:var(--bg-warm);}
+tbody td{padding:9px 12px;font-size:12px;color:var(--ink-soft);}
+td.strong{color:var(--ink);font-weight:500;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;}
+.badge-green{background:var(--green-light);color:var(--green);}
+.badge-blue{background:var(--blue-light);color:var(--blue);}
+.badge-amber{background:var(--amber-light);color:var(--amber);}
+.badge-red{background:var(--red-light);color:var(--red);}
+.btn-analyze{background:var(--black);color:white;border:none;border-radius:var(--radius);padding:10px 22px;font-size:12px;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity 0.15s;}
+.btn-analyze:hover{opacity:0.8;}
+.btn-analyze:disabled{opacity:0.4;cursor:not-allowed;}
+.spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite;display:none;}
+.btn-analyze.loading .spinner{display:block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.ai-empty{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:48px 32px;text-align:center;}
+.ai-empty-icon{font-size:32px;margin-bottom:12px;}
+.ai-empty-title{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:6px;}
+.ai-empty-sub{font-size:12px;color:var(--ink-faint);max-width:360px;margin:0 auto 20px;}
+.ai-results{display:flex;flex-direction:column;gap:14px;}
+.ai-section{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.ai-section-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.ai-section-title{font-size:12px;font-weight:700;color:var(--ink);}
+.ai-section-body{padding:16px 18px;}
+.ai-item{display:flex;gap:10px;margin-bottom:12px;align-items:flex-start;}
+.ai-item:last-child{margin-bottom:0;}
+.ai-item-dot{width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.dot-green{background:var(--green);}
+.dot-red{background:var(--red);}
+.dot-amber{background:var(--amber);}
+.dot-blue{background:var(--blue);}
+.ai-item-text{font-size:12px;color:var(--ink-soft);line-height:1.6;}
+.ai-item-text strong{color:var(--ink);font-weight:600;}
+.ai-highlight{background:var(--black);color:white;border-radius:var(--radius);padding:18px 20px;margin-bottom:14px;}
+.ai-highlight-label{font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0.5;margin-bottom:6px;}
+.ai-highlight-text{font-size:14px;line-height:1.6;opacity:0.9;}
+.ai-footer{background:var(--bg-warm);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-size:11px;color:var(--ink-faint);}
+.sl-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.sl-grid{display:flex;flex-direction:column;gap:12px;}
+.sl-niche-filter{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.niche-btn{padding:5px 12px;border-radius:4px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--ink-soft);font-family:var(--font-body);transition:all 0.15s;}
+.niche-btn.active{background:var(--black);color:white;border-color:var(--black);}
+.trend-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.trend-top{display:flex;align-items:flex-start;gap:14px;padding:16px 18px 12px;}
+.trend-num{font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--bg-mid);line-height:1;min-width:36px;}
+.trend-main{flex:1;}
+.trend-topic{font-family:var(--font-display);font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.trend-desc{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-bottom:8px;}
+.trend-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.trend-tag{font-size:10px;font-weight:500;padding:2px 8px;border-radius:3px;}
+.tag-urgency-alta{background:#FDE8E8;color:#8B1E1E;}
+.tag-urgency-media{background:var(--amber-light);color:var(--amber);}
+.tag-urgency-evergreen{background:var(--green-light);color:var(--green);}
+.trend-right{min-width:120px;display:flex;justify-content:flex-end;}
+.trend-format{font-size:10px;font-weight:600;padding:3px 8px;border-radius:3px;background:var(--blue-light);color:var(--blue);}
+.trend-bottom{background:var(--bg-warm);border-top:1px solid var(--border);padding:12px 18px;display:flex;gap:8px;}
+.trend-angle-label{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;margin-top:1px;}
+.trend-angle{font-size:12px;color:var(--ink);line-height:1.5;font-style:italic;flex:1;}
+.sl-updated{font-size:11px;color:var(--ink-faint);text-align:center;padding:12px;font-style:italic;}
+.upload-zone{border:1.5px dashed var(--border-dark);background:var(--white);border-radius:var(--radius);padding:28px 24px;text-align:center;cursor:pointer;transition:all 0.15s;position:relative;}
+.upload-zone:hover{border-color:var(--ink);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.analysis-box{background:var(--bg-warm);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-top:10px;display:none;}
+.analysis-box.visible{display:block;}
+.analysis-title{font-size:10px;font-weight:600;color:var(--ink);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:6px;}
+.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group.full{grid-column:1/-1;}
+.form-group.span2{grid-column:span 2;}
+label{font-size:11px;color:var(--ink-soft);font-weight:500;}
+input,select,textarea{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;font-family:var(--font-body);color:var(--ink);outline:none;transition:border-color 0.15s;-webkit-appearance:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);}
+textarea{resize:vertical;min-height:52px;}
+.btn{padding:8px 16px;border-radius:var(--radius);font-size:12px;font-family:var(--font-body);font-weight:500;cursor:pointer;border:none;transition:opacity 0.15s;}
+.btn:hover{opacity:0.8;}
+.btn-primary{background:var(--black);color:white;}
+.btn-outline{background:transparent;border:1px solid var(--border-dark);color:var(--ink-soft);}
+.btn-row{display:flex;gap:8px;margin-top:18px;}
+.funnel-wrap{max-width:540px;}
+.funnel-step{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:5px;}
+.funnel-num{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--ink-faint);min-width:26px;}
+.funnel-info{flex:1;}
+.funnel-name{font-size:12px;font-weight:600;color:var(--ink);}
+.funnel-desc{font-size:11px;color:var(--ink-faint);}
+.funnel-right{text-align:right;}
+.funnel-val{font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--ink);}
+.funnel-pct{font-size:10px;font-weight:600;color:var(--green);margin-top:1px;}
+.funnel-arrow{text-align:center;color:var(--border-dark);font-size:12px;margin:2px 0;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:var(--radius);padding:24px;width:360px;max-width:90vw;}
+.modal-title{font-family:var(--font-display);font-size:15px;font-weight:600;margin-bottom:14px;}
+.modal-actions{display:flex;gap:8px;margin-top:18px;justify-content:flex-end;}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--black);color:white;padding:9px 16px;border-radius:var(--radius);font-size:12px;font-weight:500;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:999;}
+.toast.show{opacity:1;}
+.empty-state{text-align:center;padding:32px;color:var(--ink-faint);font-size:12px;font-style:italic;}
+.loading-text{font-size:11px;color:var(--ink-faint);font-style:italic;}
+.no-client{background:#FFF8E6;border:1px solid #FFD970;border-radius:var(--radius);padding:10px 14px;font-size:12px;color:#7A5A00;margin-bottom:14px;display:none;}
+.api-warning{background:#FDF0F0;border:1px solid #E8C4C4;border-radius:var(--radius);padding:12px 16px;font-size:12px;color:#8B1E1E;margin-bottom:16px;}
+.api-warning a{color:#8B1E1E;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CM Tracker <span>Social Media Performance</span></div>
+  <div class="header-right">
+    <select class="client-select" id="client-select" onchange="switchClient()"><option value="">— Cliente —</option></select>
+    <button class="btn-sm" onclick="openAddClient()">+ Cliente</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-tab active" onclick="switchTab('analytics',event)">Analytics</button>
+  <button class="nav-tab" onclick="switchTab('insights',event)">✦ Insights IA</button>
+  <button class="nav-tab" onclick="switchTab('listening',event)">◎ Tendencias</button>
+  <button class="nav-tab" onclick="switchTab('cargar',event)">Cargar contenido</button>
+  <button class="nav-tab" onclick="switchTab('funnel',event)">Funnel</button>
+  <button class="nav-tab" onclick="switchTab('top',event)">Top contenido</button>
+</nav>
+
+<!-- ANALYTICS -->
+<div class="view active" id="tab-analytics">
+  <p class="page-title" id="a-client-name">Analytics</p>
+  <p class="page-sub">Seleccioná el período para ver métricas y comparativas.</p>
+  <div class="filter-bar">
+    <span class="filter-label">Período</span>
+    <button class="period-btn active" onclick="setPeriod(7,this)">7 días</button>
+    <button class="period-btn" onclick="setPeriod(30,this)">30 días</button>
+    <button class="period-btn" onclick="setPeriod(90,this)">90 días</button>
+    <button class="period-btn" onclick="setPeriod(0,this)">Todo</button>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Personalizado</span>
+    <input type="date" class="date-input" id="date-from" onchange="setCustomPeriod()">
+    <span style="font-size:11px;color:var(--ink-faint);">→</span>
+    <input type="date" class="date-input" id="date-to" onchange="setCustomPeriod()">
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Publicaciones</div><div class="stat-delta delta-neutral" id="d-delta-posts">—</div></div><div class="stat-value" id="d-posts">0</div><div class="stat-prev" id="d-prev-posts"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Alcance</div><div class="stat-delta delta-neutral" id="d-delta-alcance">—</div></div><div class="stat-value" id="d-alcance">0</div><div class="stat-prev" id="d-prev-alcance"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Leads</div><div class="stat-delta delta-neutral" id="d-delta-leads">—</div></div><div class="stat-value" id="d-leads">0</div><div class="stat-prev" id="d-prev-leads"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Guardados</div><div class="stat-delta delta-neutral" id="d-delta-guardados">—</div></div><div class="stat-value" id="d-guardados">0</div><div class="stat-prev" id="d-prev-guardados"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Likes</div><div class="stat-delta delta-neutral" id="d-delta-likes">—</div></div><div class="stat-value" id="d-likes">0</div><div class="stat-prev" id="d-prev-likes"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Comentarios</div><div class="stat-delta delta-neutral" id="d-delta-comentarios">—</div></div><div class="stat-value" id="d-comentarios">0</div><div class="stat-prev" id="d-prev-comentarios"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">DMs intención</div><div class="stat-delta delta-neutral" id="d-delta-dms">—</div></div><div class="stat-value" id="d-dms">0</div><div class="stat-prev" id="d-prev-dms"></div></div>
+    <div class="stat-card"><div class="stat-top"><div class="stat-label">Clicks WA/Web</div><div class="stat-delta delta-neutral" id="d-delta-clicks">—</div></div><div class="stat-value" id="d-clicks">0</div><div class="stat-prev" id="d-prev-clicks"></div></div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Alcance por publicación</div><div class="chart-wrap"><canvas id="chart-alcance"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Posts por tipo</div><div class="chart-wrap"><canvas id="chart-tipo"></canvas></div></div>
+  </div>
+  <div class="compare-grid">
+    <div class="compare-card"><div class="compare-title">Período actual vs anterior</div><div id="compare-rows"><div class="empty-state">Sin datos.</div></div><div style="display:flex;gap:14px;margin-top:12px;"><div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:3px;background:var(--black);border-radius:2px;"></div><span style="font-size:10px;color:var(--ink-faint);">Actual</span></div><div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:3px;background:var(--border-dark);border-radius:2px;"></div><span style="font-size:10px;color:var(--ink-faint);">Anterior</span></div></div></div>
+    <div class="compare-card"><div class="compare-title">Leads por área</div><div id="area-bars"><div class="empty-state">Sin datos.</div></div></div>
+  </div>
+  <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Área</th><th>Alcance</th><th>Guardados</th><th>DMs</th><th>Leads</th></tr></thead><tbody id="analytics-tbody"><tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr></tbody></table></div></div>
+</div>
+
+<!-- INSIGHTS IA -->
+<div class="view" id="tab-insights">
+  <div class="api-warning" id="api-key-warning" style="display:none;">
+    ⚠️ Para usar Insights IA y Tendencias necesitás configurar tu API key de Anthropic. <a href="#" onclick="showApiSetup()">Configurar ahora</a>
+  </div>
+  <div class="ai-header">
+    <div><p class="page-title">Insights IA</p><p class="page-sub">Análisis inteligente basado en tus datos reales.</p></div>
+    <button class="btn-analyze" id="btn-analyze" onclick="runAnalysis()"><div class="spinner"></div><span class="btn-text">✦ Analizar ahora</span></button>
+  </div>
+  <div id="ai-empty-state" class="ai-empty">
+    <div class="ai-empty-icon">✦</div>
+    <div class="ai-empty-title">Análisis inteligente de tu contenido</div>
+    <div class="ai-empty-sub">Claude analiza tus publicaciones, detecta patrones y te da recomendaciones concretas.</div>
+    <button class="btn-analyze" onclick="runAnalysis()" style="margin:0 auto;"><div class="spinner"></div><span class="btn-text">✦ Analizar ahora</span></button>
+  </div>
+  <div id="ai-results" class="ai-results" style="display:none;"></div>
+</div>
+
+<!-- TENDENCIAS -->
+<div class="view" id="tab-listening">
+  <div class="sl-header">
+    <div><p class="page-title">◎ Tendencias</p><p class="page-sub">Temas en auge esta semana — con ángulo de contenido para tu cliente.</p></div>
+    <button class="btn-analyze" id="btn-listening" onclick="runListening()"><div class="spinner"></div><span class="btn-text">Buscar tendencias</span></button>
+  </div>
+  <div class="sl-niche-filter">
+    <span class="filter-label">Nicho</span>
+    <button class="niche-btn active" onclick="setNiche('longevidad',this)">Longevidad</button>
+    <button class="niche-btn" onclick="setNiche('medicina funcional',this)">Medicina Funcional</button>
+    <button class="niche-btn" onclick="setNiche('biohacking',this)">Biohacking</button>
+    <button class="niche-btn" onclick="setNiche('wellness lujo',this)">Wellness Premium</button>
+    <button class="niche-btn" onclick="setNiche('estetica medicina',this)">Estética Médica</button>
+  </div>
+  <div id="sl-empty" class="ai-empty">
+    <div class="ai-empty-icon">◎</div>
+    <div class="ai-empty-title">Social Listening en tiempo real</div>
+    <div class="ai-empty-sub">Claude busca los temas más mencionados esta semana y te dice cómo usarlos como contenido.</div>
+    <button class="btn-analyze" onclick="runListening()" style="margin:20px auto 0;"><div class="spinner"></div><span class="btn-text">Buscar tendencias ahora</span></button>
+  </div>
+  <div id="sl-results" class="sl-grid" style="display:none;"></div>
+  <div id="sl-updated" class="sl-updated" style="display:none;"></div>
+</div>
+
+<!-- CARGAR -->
+<div class="view" id="tab-cargar">
+  <p class="page-title">Cargar publicación</p>
+  <p class="page-sub">Subí una captura de Instagram Insights — Claude extrae las métricas automáticamente.</p>
+  <div class="no-client" id="no-client-warn">Seleccioná un cliente antes de cargar.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0;">
+    <div class="upload-zone" id="uz-1" onclick="document.getElementById('fi-1').click()">
+      <input type="file" id="fi-1" accept="image/*" style="display:none" onchange="previewFile(1,event)">
+      <div id="uz-1-preview" style="display:none;position:relative;"><img id="uz-1-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(1)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
+      <div id="uz-1-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 1</div><div style="font-size:10px;color:var(--ink-faint);">Overview</div></div>
+    </div>
+    <div class="upload-zone" id="uz-2" onclick="document.getElementById('fi-2').click()">
+      <input type="file" id="fi-2" accept="image/*" style="display:none" onchange="previewFile(2,event)">
+      <div id="uz-2-preview" style="display:none;position:relative;"><img id="uz-2-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(2)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
+      <div id="uz-2-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 2</div><div style="font-size:10px;color:var(--ink-faint);">Engagement</div></div>
+    </div>
+    <div class="upload-zone" id="uz-3" onclick="document.getElementById('fi-3').click()">
+      <input type="file" id="fi-3" accept="image/*" style="display:none" onchange="previewFile(3,event)">
+      <div id="uz-3-preview" style="display:none;position:relative;"><img id="uz-3-img" style="width:100%;height:90px;object-fit:cover;border-radius:4px;"><button onclick="event.stopPropagation();clearFile(3)" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);border:none;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;">✕</button></div>
+      <div id="uz-3-empty"><div style="font-size:18px;margin-bottom:4px;">📊</div><div style="font-size:12px;font-weight:500;color:var(--ink);">Captura 3</div><div style="font-size:10px;color:var(--ink-faint);">Audience</div></div>
+    </div>
+  </div>
+  <div style="margin-top:8px;margin-bottom:0;">
+    <button class="btn btn-outline" onclick="analyzeAllFiles()" id="btn-analyze-files" style="width:100%;justify-content:center;display:flex;align-items:center;gap:8px;">
+      <div class="spinner" id="analyze-spinner" style="border-color:rgba(0,0,0,0.2);border-top-color:var(--ink);display:none;"></div>
+      <span>Extraer métricas de las capturas</span>
+    </button>
+  </div>
+  <div class="analysis-box" id="analysis-box"><div class="analysis-title">Métricas extraídas</div><div id="analysis-content" class="loading-text">Analizando...</div></div>
+  <div class="form-grid">
+    <div class="form-group"><label>Fecha</label><input type="date" id="f-fecha"></div>
+    <div class="form-group"><label>Tipo</label><select id="f-tipo"><option>Reel</option><option>Carrusel</option><option>Post</option><option>Story</option></select></div>
+    <div class="form-group"><label>Objetivo</label><select id="f-objetivo"><option>Conversión</option><option>Awareness</option><option>Educación</option><option>Comunidad</option></select></div>
+    <div class="form-group"><label>Área</label><input type="text" id="f-area" placeholder="Ej: Neurología..."></div>
+    <div class="form-group"><label>Views</label><input type="number" id="f-views" placeholder="0"></div>
+    <div class="form-group"><label>Alcance total</label><input type="number" id="f-alcance" placeholder="0"></div>
+    <div class="form-group"><label>Alcance no seguidores</label><input type="number" id="f-alcance-ns" placeholder="0"></div>
+    <div class="form-group"><label>Visitas perfil</label><input type="number" id="f-visitas" placeholder="0"></div>
+    <div class="form-group"><label>Likes</label><input type="number" id="f-likes" placeholder="0"></div>
+    <div class="form-group"><label>Comentarios</label><input type="number" id="f-comentarios" placeholder="0"></div>
+    <div class="form-group"><label>Guardados</label><input type="number" id="f-guardados" placeholder="0"></div>
+    <div class="form-group"><label>Compartidos</label><input type="number" id="f-compartidos" placeholder="0"></div>
+    <div class="form-group"><label>Nuevos seguidores</label><input type="number" id="f-seguidores" placeholder="0"></div>
+    <div class="form-group"><label>Clicks WhatsApp</label><input type="number" id="f-clicks-wa" placeholder="0"></div>
+    <div class="form-group"><label>Clicks web</label><input type="number" id="f-clicks-web" placeholder="0"></div>
+    <div class="form-group"><label>DMs con intención</label><input type="number" id="f-dms" placeholder="0"></div>
+    <div class="form-group"><label>Leads generados</label><input type="number" id="f-leads" placeholder="0"></div>
+    <div class="form-group span2"><label>Servicio / Campaña</label><input type="text" id="f-servicio" placeholder="Ej: Performance Access..."></div>
+    <div class="form-group full"><label>Descripción</label><input type="text" id="f-desc" placeholder="Ej: Reel estrés oxidativo — Dra. Sara"></div>
+    <div class="form-group full"><label>Notas</label><textarea id="f-notas" placeholder="Observaciones..."></textarea></div>
+  </div>
+  <div class="btn-row"><button class="btn btn-primary" onclick="savePost()">Guardar</button><button class="btn btn-outline" onclick="clearForm()">Limpiar</button></div>
+</div>
+
+<!-- FUNNEL -->
+<div class="view" id="tab-funnel">
+  <p class="page-title">Funnel de conversión</p>
+  <p class="page-sub">Contenido → Alcance → Lead → Reserva → Paciente → €</p>
+  <div class="grid-2" style="max-width:540px;">
+    <div class="form-group"><label>Reservas</label><input type="number" id="funnel-reservas" placeholder="0" oninput="updateFunnel()"></div>
+    <div class="form-group"><label>Pacientes efectivos</label><input type="number" id="funnel-pacientes" placeholder="0" oninput="updateFunnel()"></div>
+    <div class="form-group"><label>Facturación (€)</label><input type="number" id="funnel-facturacion" placeholder="0" oninput="updateFunnel()"></div>
+  </div>
+  <div class="funnel-wrap" id="funnel-steps"></div>
+</div>
+
+<!-- TOP -->
+<div class="view" id="tab-top">
+  <p class="page-title">Top contenido</p>
+  <p class="page-sub">Rankeado por score de conversión.</p>
+  <div class="table-card"><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Área</th><th>Alcance</th><th>Guardados</th><th>Leads</th><th>Score</th></tr></thead><tbody id="top-tbody"><tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr></tbody></table></div></div>
+</div>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="modal-apikey">
+  <div class="modal">
+    <div class="modal-title">Configurar API Key de Anthropic</div>
+    <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px;">Necesitás una API key de <a href="https://console.anthropic.com" target="_blank" style="color:var(--ink);">console.anthropic.com</a> para usar Insights IA y Tendencias.</p>
+    <div class="form-group"><label>API Key</label><input type="password" id="api-key-input" placeholder="sk-ant-..."></div>
+    <div class="modal-actions"><button class="btn btn-outline" onclick="document.getElementById('modal-apikey').classList.remove('open')">Cancelar</button><button class="btn btn-primary" onclick="saveApiKey()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- Modal cliente -->
+<div class="modal-overlay" id="modal-client">
+  <div class="modal">
+    <div class="modal-title">Agregar cliente</div>
+    <div class="form-group"><label>Nombre</label><input type="text" id="new-client-name" placeholder="Ej: AMUNA Vitality Clinic"></div>
+    <div class="form-group" style="margin-top:10px;"><label>Red principal</label><select id="new-client-network"><option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>Múltiples</option></select></div>
+    <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="addClient()">Agregar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CLIENTS_KEY='cm_clients';
+const POSTS_PREFIX='cm_posts_';
+const API_KEY_STORAGE='cm_api_key';
+let currentClient=null,currentPeriodDays=7,customFrom=null,customTo=null;
+let chartAlcance=null,chartTipo=null;
+let currentNiche='longevidad';
+let API_KEY='';
+
+// Storage usando localStorage (funciona en web publicada)
+function store(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch{}}
+function retrieve(key){try{const v=localStorage.getItem(key);return v?JSON.parse(v):null;}catch{return null;}}
+
+function getClients(){return retrieve(CLIENTS_KEY)||[];}
+function saveClients(c){store(CLIENTS_KEY,c);}
+function getPosts(cid){return retrieve(POSTS_PREFIX+cid)||[];}
+function savePosts(cid,p){store(POSTS_PREFIX+cid,p);}
+function getApiKey(){return retrieve(API_KEY_STORAGE)||'';}
+function storeApiKey(k){store(API_KEY_STORAGE,k);}
+
+(()=>{
+  API_KEY=getApiKey();
+  renderClientSelect();
+  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+  const today=new Date(),from=new Date(today);from.setDate(from.getDate()-7);
+  document.getElementById('date-to').value=today.toISOString().split('T')[0];
+  document.getElementById('date-from').value=from.toISOString().split('T')[0];
+})();
+
+function showApiSetup(){document.getElementById('modal-apikey').classList.add('open');}
+function saveApiKey(){
+  const key=document.getElementById('api-key-input').value.trim();
+  if(!key){showToast('Ingresá tu API key.');return;}
+  API_KEY=key;storeApiKey(key);
+  document.getElementById('modal-apikey').classList.remove('open');
+  document.getElementById('api-key-warning').style.display='none';
+  showToast('API key guardada.');
+}
+
+async function callClaude(messages,tools){
+  if(!API_KEY){document.getElementById('api-key-warning').style.display='block';showApiSetup();return null;}
+  const body={model:'claude-sonnet-4-6',max_tokens:1500,messages};
+  if(tools)body.tools=tools;
+  const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
+  return resp.json();
+}
+
+function renderClientSelect(){
+  const clients=getClients(),sel=document.getElementById('client-select'),prev=sel.value;
+  sel.innerHTML='<option value="">— Cliente —</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  if(prev&&clients.find(c=>c.id===prev))sel.value=prev;
+}
+
+function switchClient(){
+  currentClient=document.getElementById('client-select').value||null;
+  document.getElementById('no-client-warn').style.display=currentClient?'none':'block';
+  refreshAnalytics();updateFunnel();refreshTop();
+  document.getElementById('ai-results').style.display='none';
+  document.getElementById('ai-empty-state').style.display='block';
+}
+
+function setPeriod(days,btn){
+  currentPeriodDays=days;customFrom=null;customTo=null;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');refreshAnalytics();
+}
+
+function setCustomPeriod(){
+  const from=document.getElementById('date-from').value,to=document.getElementById('date-to').value;
+  if(from&&to){customFrom=from;customTo=to;currentPeriodDays=0;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));refreshAnalytics();}
+}
+
+function setNiche(niche,btn){
+  currentNiche=niche;
+  document.querySelectorAll('.niche-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function getDateRange(){
+  const today=new Date();today.setHours(23,59,59,999);
+  if(customFrom&&customTo)return{from:new Date(customFrom+'T00:00:00'),to:new Date(customTo+'T23:59:59')};
+  if(currentPeriodDays===0)return{from:new Date('2000-01-01'),to:today};
+  const from=new Date(today);from.setDate(from.getDate()-currentPeriodDays);from.setHours(0,0,0,0);
+  return{from,to:today};
+}
+
+function getPrevRange(r){const d=r.to-r.from;return{from:new Date(r.from-d),to:new Date(r.from-1)};}
+function filterPosts(posts,range){return posts.filter(p=>{const d=new Date(p.fecha+'T00:00:00');return d>=range.from&&d<=range.to;});}
+function sum(posts,key){return posts.reduce((s,p)=>s+(+p[key]||0),0);}
+
+function renderDelta(elId,curr,prev){
+  const el=document.getElementById(elId);
+  if(!prev){el.textContent='—';el.className='stat-delta delta-neutral';return;}
+  const pct=Math.round(((curr-prev)/prev)*100);
+  el.textContent=(pct>0?'+':'')+pct+'%';
+  el.className='stat-delta '+(pct>0?'delta-up':pct<0?'delta-down':'delta-neutral');
+}
+
+function refreshAnalytics(){
+  if(!currentClient)return;
+  const clients=getClients(),client=clients.find(c=>c.id===currentClient);
+  if(client)document.getElementById('a-client-name').textContent=client.name;
+  const allPosts=getPosts(currentClient),range=getDateRange(),prevRange=getPrevRange(range);
+  const posts=filterPosts(allPosts,range),prevPosts=filterPosts(allPosts,prevRange);
+  const cc=sum(posts,'clicks_wa')+sum(posts,'clicks_web'),pc=sum(prevPosts,'clicks_wa')+sum(prevPosts,'clicks_web');
+  [[posts.length,prevPosts.length,'d-posts','d-delta-posts','d-prev-posts'],
+   [sum(posts,'alcance'),sum(prevPosts,'alcance'),'d-alcance','d-delta-alcance','d-prev-alcance'],
+   [sum(posts,'leads'),sum(prevPosts,'leads'),'d-leads','d-delta-leads','d-prev-leads'],
+   [sum(posts,'guardados'),sum(prevPosts,'guardados'),'d-guardados','d-delta-guardados','d-prev-guardados'],
+   [sum(posts,'likes'),sum(prevPosts,'likes'),'d-likes','d-delta-likes','d-prev-likes'],
+   [sum(posts,'comentarios'),sum(prevPosts,'comentarios'),'d-comentarios','d-delta-comentarios','d-prev-comentarios'],
+   [sum(posts,'dms'),sum(prevPosts,'dms'),'d-dms','d-delta-dms','d-prev-dms'],
+   [cc,pc,'d-clicks','d-delta-clicks','d-prev-clicks']
+  ].forEach(([curr,prev,valId,deltaId,prevId])=>{
+    document.getElementById(valId).textContent=fmtNum(curr);
+    renderDelta(deltaId,curr,prev);
+    document.getElementById(prevId).textContent=prev?`Anterior: ${fmtNum(prev)}`:'';
+  });
+  renderCharts(posts);renderCompare(posts,prevPosts);renderAreaBars(posts);renderTable(posts);
+}
+
+function renderCharts(posts){
+  const s=[...posts].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  if(chartAlcance)chartAlcance.destroy();
+  chartAlcance=new Chart(document.getElementById('chart-alcance').getContext('2d'),{type:'bar',data:{labels:s.map(p=>p.fecha.slice(5)),datasets:[{label:'Alcance',data:s.map(p=>p.alcance||0),backgroundColor:'rgba(26,26,26,0.8)',borderRadius:2},{label:'Leads',data:s.map(p=>p.leads||0),backgroundColor:'rgba(30,92,58,0.7)',borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:10,family:'Inter'},boxWidth:10}}},scales:{x:{ticks:{font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{font:{size:9}},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+  const tipos={};posts.forEach(p=>{tipos[p.tipo]=(tipos[p.tipo]||0)+1;});
+  if(chartTipo)chartTipo.destroy();
+  chartTipo=new Chart(document.getElementById('chart-tipo').getContext('2d'),{type:'doughnut',data:{labels:Object.keys(tipos),datasets:[{data:Object.values(tipos),backgroundColor:['#1A1A1A','#1E5C3A','#1A3A5C','#7A5A1A'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10,family:'Inter'},boxWidth:10,padding:8}}}}});
+}
+
+function renderCompare(curr,prev){
+  const metrics=[{label:'Alcance',k:'alcance'},{label:'Guardados',k:'guardados'},{label:'Likes',k:'likes'},{label:'DMs',k:'dms'},{label:'Leads',k:'leads'}];
+  document.getElementById('compare-rows').innerHTML=metrics.map(m=>{const cv=sum(curr,m.k),pv=sum(prev,m.k),maxV=Math.max(cv,pv,1);return`<div class="compare-row"><div class="compare-metric">${m.label}</div><div class="compare-bars"><div class="compare-bar-wrap"><div class="compare-bar bar-current" style="width:${(cv/maxV*100).toFixed(0)}%"></div><span class="compare-val">${fmtNum(cv)}</span></div><div class="compare-bar-wrap"><div class="compare-bar bar-prev" style="width:${(pv/maxV*100).toFixed(0)}%"></div><span class="compare-val" style="color:var(--ink-faint)">${fmtNum(pv)}</span></div></div></div>`;}).join('')||'<div class="empty-state">Sin datos.</div>';
+}
+
+function renderAreaBars(posts){
+  const areas={};posts.forEach(p=>{if(p.area&&p.area!=='—')areas[p.area]=(areas[p.area]||0)+p.leads;});
+  const maxA=Math.max(...Object.values(areas),1);
+  document.getElementById('area-bars').innerHTML=Object.entries(areas).sort((a,b)=>b[1]-a[1]).map(([a,v])=>`<div class="compare-row"><div class="compare-metric" style="font-size:11px;">${a}</div><div class="compare-bars"><div class="compare-bar-wrap"><div class="compare-bar bar-current" style="width:${(v/maxA*100).toFixed(0)}%"></div><span class="compare-val">${v}</span></div></div></div>`).join('')||'<div class="empty-state">Sin datos.</div>';
+}
+
+function renderTable(posts){
+  const tbody=document.getElementById('analytics-tbody');
+  if(!posts.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr>';return;}
+  tbody.innerHTML=[...posts].sort((a,b)=>b.fecha.localeCompare(a.fecha)).map(p=>`<tr><td>${p.fecha}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td class="strong" style="max-width:160px;white-space:normal;">${p.desc||'—'}</td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td>${p.dms}</td><td><b>${p.leads}</b></td></tr>`).join('');
+}
+
+async function runAnalysis(){
+  if(!currentClient){showToast('Seleccioná un cliente primero.');return;}
+  const btn=document.getElementById('btn-analyze');
+  btn.classList.add('loading');btn.disabled=true;
+  const allPosts=getPosts(currentClient),range=getDateRange(),prevRange=getPrevRange(range);
+  const posts=filterPosts(allPosts,range),prevPosts=filterPosts(allPosts,prevRange);
+  const clients=getClients(),client=clients.find(c=>c.id===currentClient);
+  if(!posts.length){showToast('Sin publicaciones en este período.');btn.classList.remove('loading');btn.disabled=false;return;}
+  const topPost=[...posts].sort((a,b)=>((b.leads*10)+(b.guardados*3))-((a.leads*10)+(a.guardados*3)))[0];
+  const dataStr=`Cliente: ${client?.name||'—'}\nPublicaciones: ${posts.length}\nAlcance: ${sum(posts,'alcance')} | Likes: ${sum(posts,'likes')} | Guardados: ${sum(posts,'guardados')} | DMs: ${sum(posts,'dms')} | Leads: ${sum(posts,'leads')}\nAnterior — Alcance: ${sum(prevPosts,'alcance')} | Leads: ${sum(prevPosts,'leads')}\nPosts:\n${posts.map(p=>`- ${p.fecha}|${p.tipo}|${p.area}|${p.objetivo}|alcance:${p.alcance}|leads:${p.leads}|guardados:${p.guardados}|"${p.desc||''}"`).join('\n')}\nMejor: ${topPost?`${topPost.tipo} ${topPost.fecha} "${topPost.desc}" leads:${topPost.leads}`:'N/A'}`;
+  try{
+    const data=await callClaude([{role:'user',content:`Eres estratega de social media para clínicas médicas de lujo. Analizá estos datos y respondé SOLO con JSON válido sin markdown:\n{"resumen":"","funcionando":["","",""],"mejorar":["","",""],"recomendaciones":["","",""],"alerta":null,"proxima_accion":""}\nDATOS:\n${dataStr}`}]);
+    if(!data){btn.classList.remove('loading');btn.disabled=false;return;}
+    const text=data.content?.map(i=>i.text||'').join('')||'';
+    let parsed;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch{showToast('Error al procesar.');btn.classList.remove('loading');btn.disabled=false;return;}
+    renderAIResults(parsed);
+    document.getElementById('ai-empty-state').style.display='none';
+    document.getElementById('ai-results').style.display='flex';
+    showToast('Análisis completado.');
+  }catch{showToast('Error de conexión.');}
+  btn.classList.remove('loading');btn.disabled=false;
+}
+
+function renderAIResults(d){
+  document.getElementById('ai-results').innerHTML=`
+    <div class="ai-highlight"><div class="ai-highlight-label">Resumen del período</div><div class="ai-highlight-text">${d.resumen||'—'}</div></div>
+    ${d.alerta?`<div class="ai-section" style="border-color:#E8C4C4;"><div class="ai-section-header" style="background:#FDF0F0;"><span>⚠️</span><div class="ai-section-title" style="color:var(--red);">Alerta</div></div><div class="ai-section-body"><div class="ai-item"><div class="ai-item-dot dot-red"></div><div class="ai-item-text">${d.alerta}</div></div></div></div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="ai-section"><div class="ai-section-header"><span>✓</span><div class="ai-section-title">Qué está funcionando</div></div><div class="ai-section-body">${(d.funcionando||[]).map(i=>`<div class="ai-item"><div class="ai-item-dot dot-green"></div><div class="ai-item-text">${i}</div></div>`).join('')}</div></div>
+      <div class="ai-section"><div class="ai-section-header"><span>↗</span><div class="ai-section-title">Qué mejorar</div></div><div class="ai-section-body">${(d.mejorar||[]).map(i=>`<div class="ai-item"><div class="ai-item-dot dot-amber"></div><div class="ai-item-text">${i}</div></div>`).join('')}</div></div>
+    </div>
+    <div class="ai-section"><div class="ai-section-header"><span>→</span><div class="ai-section-title">Recomendaciones concretas</div></div><div class="ai-section-body">${(d.recomendaciones||[]).map(i=>`<div class="ai-item"><div class="ai-item-dot dot-blue"></div><div class="ai-item-text">${i}</div></div>`).join('')}</div></div>
+    <div class="ai-section" style="border-color:#C4D4E8;"><div class="ai-section-header" style="background:#EEF3F8;"><span>⚡</span><div class="ai-section-title" style="color:var(--blue);">Próxima acción prioritaria</div></div><div class="ai-section-body"><div class="ai-item"><div class="ai-item-dot dot-blue"></div><div class="ai-item-text"><strong>${d.proxima_accion||'—'}</strong></div></div></div></div>
+    <div class="ai-footer">Análisis generado con datos reales. Actualizá cada vez que cargues nuevas publicaciones.</div>`;
+}
+
+async function runListening(){
+  const btn=document.getElementById('btn-listening');
+  btn.classList.add('loading');btn.disabled=true;
+  document.getElementById('sl-empty').style.display='none';
+  document.getElementById('sl-results').style.display='none';
+  document.getElementById('sl-updated').style.display='none';
+  try{
+    const data=await callClaude([{role:'user',content:`Eres estratega de contenido para clínicas de medicina funcional y longevidad de lujo.\n\nBuscá los 6 temas más mencionados esta semana en el nicho de "${currentNiche}" en redes sociales, blogs, medios y podcasts en España y a nivel internacional.\n\nRespondé SOLO con JSON válido sin markdown:\n{"tendencias":[{"tema":"","descripcion":"","urgencia":"alta|media|evergreen","formato":"Reel|Carrusel|Story|Reel + Carrusel","angulo_amuna":"","ejemplo_titulo":""}]}`}],[{type:'web_search_20250305',name:'web_search'}]);
+    if(!data){btn.classList.remove('loading');btn.disabled=false;document.getElementById('sl-empty').style.display='block';return;}
+    const text=data.content?.filter(i=>i.type==='text').map(i=>i.text).join('')||'';
+    let parsed;
+    try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}
+    catch{const m=text.match(/\{[\s\S]*\}/);if(m)try{parsed=JSON.parse(m[0]);}catch{}}
+    if(!parsed?.tendencias){showToast('Error al obtener tendencias.');btn.classList.remove('loading');btn.disabled=false;document.getElementById('sl-empty').style.display='block';return;}
+    const urgencyClass={'alta':'tag-urgency-alta','media':'tag-urgency-media','evergreen':'tag-urgency-evergreen'};
+    const urgencyLabel={'alta':'🔥 Esta semana','media':'↑ En crecimiento','evergreen':'Evergreen activo'};
+    document.getElementById('sl-results').innerHTML=parsed.tendencias.map((t,i)=>`
+      <div class="trend-card">
+        <div class="trend-top">
+          <div class="trend-num">${String(i+1).padStart(2,'0')}</div>
+          <div class="trend-main">
+            <div class="trend-topic">${t.tema}</div>
+            <div class="trend-desc">${t.descripcion}</div>
+            <div class="trend-tags"><span class="trend-tag ${urgencyClass[t.urgencia]||'tag-urgency-media'}">${urgencyLabel[t.urgencia]||t.urgencia}</span></div>
+          </div>
+          <div class="trend-right"><span class="trend-format">${t.formato}</span></div>
+        </div>
+        <div class="trend-bottom">
+          <span class="trend-angle-label">Ángulo</span>
+          <div class="trend-angle">${t.angulo_amuna}${t.ejemplo_titulo?`<div style="margin-top:6px;font-size:11px;font-weight:600;color:var(--ink);font-style:normal;">💡 "${t.ejemplo_titulo}"</div>`:''}</div>
+        </div>
+      </div>`).join('');
+    document.getElementById('sl-results').style.display='flex';
+    const now=new Date();
+    document.getElementById('sl-updated').textContent=`Actualizado: ${now.toLocaleDateString('es-ES')} ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} — ${currentNiche}`;
+    document.getElementById('sl-updated').style.display='block';
+    showToast('Tendencias actualizadas.');
+  }catch{showToast('Error de conexión.');document.getElementById('sl-empty').style.display='block';}
+  btn.classList.remove('loading');btn.disabled=false;
+}
+
+const uploadedFiles={1:null,2:null,3:null};
+
+function previewFile(n,event){
+  const file=event.target.files[0];if(!file)return;
+  uploadedFiles[n]=file;
+  const img=document.getElementById(`uz-${n}-img`);
+  const reader=new FileReader();
+  reader.onload=e=>{
+    img.src=e.target.result;
+    document.getElementById(`uz-${n}-empty`).style.display='none';
+    document.getElementById(`uz-${n}-preview`).style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile(n){
+  uploadedFiles[n]=null;
+  document.getElementById(`uz-${n}-img`).src='';
+  document.getElementById(`fi-${n}`).value='';
+  document.getElementById(`uz-${n}-empty`).style.display='block';
+  document.getElementById(`uz-${n}-preview`).style.display='none';
+}
+
+async function analyzeAllFiles(){
+  const files=Object.values(uploadedFiles).filter(Boolean);
+  if(!files.length){showToast('Subí al menos una captura primero.');return;}
+  const btn=document.getElementById('btn-analyze-files');
+  const spinner=document.getElementById('analyze-spinner');
+  btn.disabled=true;spinner.style.display='block';
+  const box=document.getElementById('analysis-box'),content=document.getElementById('analysis-content');
+  box.classList.add('visible');content.innerHTML='<span class="loading-text">Analizando '+files.length+' captura'+(files.length>1?'s':'')+'...</span>';
+
+  const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(f);});
+
+  try{
+    const imageBlocks=await Promise.all(files.map(async f=>({type:'image',source:{type:'base64',media_type:f.type||'image/jpeg',data:await toB64(f)}})));
+    const msgContent=[...imageBlocks,{type:'text',text:`Analizá estas ${files.length} capturas de Instagram Insights de la misma publicación (pueden ser Overview, Engagement y/o Audience). Combiná toda la información visible en las imágenes. Respondé SOLO con JSON válido sin markdown:\n{"views":0,"alcance":0,"alcance_ns":0,"visitas_perfil":0,"nuevos_seguidores":0,"likes":0,"comentarios":0,"guardados":0,"compartidos":0,"clicks_wa":0,"clicks_web":0,"tipo":"","descripcion":""}\nSi un valor aparece en más de una imagen, usá el más completo. tipo: Reel/Carrusel/Post/Story.`}];
+
+    const data=await callClaude([{role:'user',content:msgContent}]);
+    if(!data){content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">Configurá tu API key primero.</span>';btn.disabled=false;spinner.style.display='none';return;}
+    const text=data.content?.map(i=>i.text||'').join('')||'';
+    let parsed;try{parsed=JSON.parse(text.replace(/```json|```/g,'').trim());}catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">No pude extraer métricas. Completá manualmente.</span>';btn.disabled=false;spinner.style.display='none';return;}
+    const map={views:'f-views',alcance:'f-alcance',alcance_ns:'f-alcance-ns',visitas_perfil:'f-visitas',nuevos_seguidores:'f-seguidores',likes:'f-likes',comentarios:'f-comentarios',guardados:'f-guardados',compartidos:'f-compartidos',clicks_wa:'f-clicks-wa',clicks_web:'f-clicks-web'};
+    Object.entries(map).forEach(([k,id])=>{if(parsed[k])document.getElementById(id).value=parsed[k];});
+    if(parsed.tipo)document.getElementById('f-tipo').value=parsed.tipo;
+    if(parsed.descripcion)document.getElementById('f-desc').value=parsed.descripcion;
+    content.innerHTML=Object.entries(parsed).filter(([k,v])=>v&&v!==''&&v!==0).map(([k,v])=>`<span style="display:inline-block;margin:2px 3px;background:white;border:1px solid var(--border);border-radius:3px;padding:2px 7px;font-size:10px;"><b>${k.replace(/_/g,' ')}</b>: ${v}</span>`).join('')||'<span class="loading-text">Sin métricas claras.</span>';
+    showToast('Métricas extraídas de '+files.length+' captura'+(files.length>1?'s':'')+'.');
+  }catch{content.innerHTML='<span style="color:#8B1E1E;font-size:11px;">Error. Completá manualmente.</span>';}
+  btn.disabled=false;spinner.style.display='none';
+}
+
+function savePost(){
+  if(!currentClient){showToast('Seleccioná un cliente primero.');return;}
+  const fecha=document.getElementById('f-fecha').value;if(!fecha){showToast('Añadí la fecha.');return;}
+  const post={id:Date.now(),fecha,tipo:document.getElementById('f-tipo').value,objetivo:document.getElementById('f-objetivo').value,area:document.getElementById('f-area').value||'—',desc:document.getElementById('f-desc').value,servicio:document.getElementById('f-servicio').value,views:+document.getElementById('f-views').value||0,alcance:+document.getElementById('f-alcance').value||0,alcance_ns:+document.getElementById('f-alcance-ns').value||0,visitas:+document.getElementById('f-visitas').value||0,likes:+document.getElementById('f-likes').value||0,comentarios:+document.getElementById('f-comentarios').value||0,guardados:+document.getElementById('f-guardados').value||0,compartidos:+document.getElementById('f-compartidos').value||0,seguidores:+document.getElementById('f-seguidores').value||0,clicks_wa:+document.getElementById('f-clicks-wa').value||0,clicks_web:+document.getElementById('f-clicks-web').value||0,dms:+document.getElementById('f-dms').value||0,leads:+document.getElementById('f-leads').value||0,notas:document.getElementById('f-notas').value};
+  const posts=getPosts(currentClient);posts.unshift(post);
+  savePosts(currentClient,posts);showToast('Guardado.');clearForm();
+}
+
+function clearForm(){
+  ['f-views','f-alcance','f-alcance-ns','f-visitas','f-likes','f-comentarios','f-guardados','f-compartidos','f-seguidores','f-clicks-wa','f-clicks-web','f-dms','f-leads','f-desc','f-servicio','f-notas','f-area'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('analysis-box').classList.remove('visible');
+  [1,2,3].forEach(n=>clearFile(n));
+  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+}
+
+function updateFunnel(){
+  if(!currentClient)return;
+  const posts=getPosts(currentClient),range=getDateRange(),filtered=filterPosts(posts,range);
+  const alcance=sum(filtered,'alcance'),clicks=sum(filtered,'clicks_wa')+sum(filtered,'clicks_web'),leads=sum(filtered,'leads');
+  const reservas=+document.getElementById('funnel-reservas').value||0,pacientes=+document.getElementById('funnel-pacientes').value||0,facturacion=+document.getElementById('funnel-facturacion').value||0;
+  const steps=[{num:'01',name:'Alcance',desc:'Total personas alcanzadas',val:alcance},{num:'02',name:'Clicks / DMs',desc:'Interacciones con intención',val:clicks,pct:alcance?(clicks/alcance*100).toFixed(1)+'%':null},{num:'03',name:'Leads',desc:'Contactos con intención real',val:leads,pct:clicks?(leads/clicks*100).toFixed(1)+'%':null},{num:'04',name:'Reservas',desc:'Citas reservadas',val:reservas,pct:leads?(reservas/leads*100).toFixed(1)+'%':null},{num:'05',name:'Pacientes',desc:'Consultas completadas',val:pacientes,pct:reservas?(pacientes/reservas*100).toFixed(1)+'%':null},{num:'06',name:'Facturación',desc:'€ generados desde Instagram',val:'€ '+facturacion.toLocaleString('es')}];
+  document.getElementById('funnel-steps').innerHTML=steps.map((s,i)=>`${i>0?'<div class="funnel-arrow">↓</div>':''}<div class="funnel-step"><div class="funnel-num">${s.num}</div><div class="funnel-info"><div class="funnel-name">${s.name}</div><div class="funnel-desc">${s.desc}</div></div><div class="funnel-right"><div class="funnel-val">${typeof s.val==='number'?fmtNum(s.val):s.val}</div>${s.pct?`<div class="funnel-pct">conv. ${s.pct}</div>`:''}</div></div>`).join('');
+}
+
+function refreshTop(){
+  if(!currentClient)return;
+  const posts=getPosts(currentClient);
+  const scored=posts.map(p=>({...p,score:(p.leads*10)+(p.guardados*3)+(p.dms*5)+(p.compartidos*2)})).sort((a,b)=>b.score-a.score).slice(0,10);
+  const tbody=document.getElementById('top-tbody');
+  if(!scored.length){tbody.innerHTML='<tr><td colspan="8" class="empty-state">Sin publicaciones.</td></tr>';return;}
+  tbody.innerHTML=scored.map(p=>`<tr><td>${p.fecha}</td><td class="strong" style="max-width:160px;white-space:normal;">${p.desc||'—'}</td><td><span class="badge ${badgeClass(p.tipo)}">${p.tipo}</span></td><td>${p.area||'—'}</td><td>${fmtNum(p.alcance)}</td><td>${fmtNum(p.guardados)}</td><td><b>${p.leads}</b></td><td><b style="color:var(--green)">${p.score}</b></td></tr>`).join('');
+}
+
+function openAddClient(){document.getElementById('modal-client').classList.add('open');}
+function closeModal(){document.getElementById('modal-client').classList.remove('open');}
+function addClient(){
+  const name=document.getElementById('new-client-name').value.trim();
+  if(!name){showToast('Escribí el nombre.');return;}
+  const clients=getClients(),id=Date.now().toString();
+  clients.push({id,name,network:document.getElementById('new-client-network').value});
+  saveClients(clients);renderClientSelect();
+  document.getElementById('client-select').value=id;currentClient=id;
+  document.getElementById('no-client-warn').style.display='none';
+  closeModal();showToast(`"${name}" agregado.`);
+}
+
+function switchTab(id,e){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(e)e.currentTarget.classList.add('active');
+  if(id==='analytics')refreshAnalytics();
+  if(id==='funnel')updateFunnel();
+  if(id==='top')refreshTop();
+}
+
+function badgeClass(t){return{Reel:'badge-green',Post:'badge-blue',Carrusel:'badge-amber',Story:'badge-red'}[t]||'badge-blue';}
+function fmtNum(n){if(!n&&n!==0)return'0';n=+n;return n>=1000?(n/1000).toFixed(1)+'k':n.toString();}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+</script>
+</body>
+</html>
